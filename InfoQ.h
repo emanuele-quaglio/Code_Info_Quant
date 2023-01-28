@@ -1013,6 +1013,7 @@ class circuit{
 		//un vettore di maschere (vettori di vettori di interi) di zeri e uni che indicano su quale coppia di qubit applicare o meno il dato gate, 3 stringhe relative a modalità per single e double qb gate e maschere
 		//mode_one= "random": single qubit gates selezionati casualmente dal vettore oneqs;
 				//"random_norep": come "random" ma evitando ripetizione successiva dello stesso singlequbitgate sullo stesso qubit;
+				//"imported_file.txt": i single qubit gates sono importati da un file i cui elementi sono stringhe di labels di single qubit gates (presenti nella collezione o nella libreria 'frequent_gates.h'), le cui righe rappresentano in ordine i diversi layers e le cui colonne rappresentano in ordine i diversi qubits, tale modalità funziona solo per un preciso n_qubits ed n_layers
 		//mode_two= "random_q": twoqubits gate selezionati casualmente in ogni coppia di qubit
 				//	"random_l" : twoqubits gate selezionati casualmente ad ogni layer, ma uguali per tutto il layer
 				// "random_q_norep": come l'omonimo ma evita la ripetizione successiva dello stesso gate sulla stessa coppia tra due layer adiacenti 
@@ -1047,6 +1048,8 @@ class circuit{
 			vector<vector<int>> randtwoq(W, vector<int>(W, 0));
 			int randtwol=0;
 			int randmask=0;
+			//nel caso in cui importo i single qubit gates da un file esterno
+			ifstream IMPORTED(mode_one);
 			//scorro sui layers
 			for(int l=0; l<D; l++){
 				//scorro sui qubits
@@ -1060,6 +1063,10 @@ class circuit{
 					else if(mode_one=="random_norep"&&oneqs.size()>1){
 						global_random(randoneq[q1], oneqs.size(), "norep", l);			
 						V[l].oneql[q1]=oneqs[randoneq[q1]];
+					}else{
+						string gate_label;
+						IMPORTED>>gate_label;
+						V[l].oneql[q1]=gate_label;
 					}
 					
 					//assegno i double qubits gates
