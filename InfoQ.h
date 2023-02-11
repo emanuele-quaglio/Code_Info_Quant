@@ -1376,12 +1376,12 @@ double Fxeb_lin(vector<double> fs_t, vector<int> histo, bool nozero=false){
 
 
 
-//funzione simile alla precedente Fxeb ma non approssima il logaritmo in serie di taylor...
+//funzione simile alla precedente Fxeb, cfr supplementary material p.8
 double Fxeb_log_google(vector<double> fs_t, vector<double> fs_e){
 	if(fs_t.size()!=fs_e.size()) cout<<"dimensioni vettori di frequenze sono incompatibili!"<<endl;
 	double Fxeb=0;
 	for(int i=0; i<fs_t.size(); i++){
-		if(fs_t[i]>0){
+		if(fs_t[i]>1e-15){
 			Fxeb+=fs_e[i]*log(fs_t.size()*fs_t[i]);	
 		}
 		
@@ -1395,10 +1395,9 @@ double Fxeb_log(vector<double> fs_t, vector<double> fs_e){
 	if(fs_t.size()!=fs_e.size()) cout<<"dimensioni vettori di frequenze sono incompatibili!"<<endl;
 	double Fxeb=0;
 	for(int i=0; i<fs_t.size(); i++){
-		if(fs_e[i]>0){
+		if(fs_e[i]>1e-15){
 			Fxeb+=fs_t[i]*log(fs_e[i]);	
 		}
-		
 	}
 	Fxeb=-Fxeb;
 	return(Fxeb);

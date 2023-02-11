@@ -61,12 +61,12 @@ void analisi_fxeb_density_matrix(){
 //come la precedente ma con stati solo puri
 void analisi_fxeb_ket(){
 	//variabili "globali"
-	ofstream MY_OFS1("fxeb_fs_q8_provalmany2.txt");
+	ofstream MY_OFS1("fxeb_fs_q8_lmany_i1.txt");
 	
 	vector<int> different_n_qubits={8};
-	vector<int> different_n_meas={1000};
-	vector<int> different_n_layers={60};
-	int n_istanze=2;
+	vector<int> different_n_meas={500};
+	vector<int> different_n_layers={60}; //ma è come se fossero n_layers*n_istanze, per il motivo seguente
+	int n_istanze=10; //ma è come se fosse una, perchè i nuovi circuiti li applica sullo stato uscente dal precedente
 	
 	frequent_gates g;
 	vector<string> my_oneqs={"SX", "SY", "SW"};
@@ -84,18 +84,13 @@ void analisi_fxeb_ket(){
 		ket temp_K;
 		//for(int n_meas=30; n_meas<=10000; n_meas*=3){	
 		for(int n_meas : different_n_meas){
-			//temp_K=K;
-			ket K_zero;
+			temp_K=K;
 			//for(int n_layers=1; n_layers<=15; n_layers+=1){
 			for(int n_layers : different_n_layers){
 				for(int n_istanza=1; n_istanza<=n_istanze; n_istanza++){ 
-					temp_K=K;
-					string imported_sample="oneqgate_samples/oneqgate_sample_"+to_string(n_istanza)+".txt";
-					circuit my_C(n_qubits, n_layers, my_oneqs, my_twoqs, g, my_masks, imported_sample, "sequence", "sequence");
-					if(n_istanza==2) {my_C.apply_circuit_parallel(K_zero); temp_K=K_zero;
-					}else{my_C.apply_circuit_parallel(temp_K);
-					}
-					if(n_istanza==1) K_zero=temp_K;
+					//temp_K=K; elimino questa riga, o meglio, la sposto al ciclo esteriore (se uno volesse fare diversi n_meas), così continua ad evolvere lo stesso stato, ottenendo numeri di layers alti con "fotografie" lungo l'evoluzione
+					circuit my_C(n_qubits, n_layers, my_oneqs, my_twoqs, g, my_masks, "random_norep", "sequence", "sequence");
+					my_C.apply_circuit_parallel(temp_K);
 					vector<int> my_histo=history_sample(temp_K, n_meas);
 					vector<double> my_fs_e=ry_to_gram(my_histo, temp_K.get_N()); 
 					vector<double> my_fs_t=freqs_theo(temp_K); 
@@ -107,9 +102,8 @@ void analisi_fxeb_ket(){
 					for(auto el : my_fs_e) {
 						MY_OFS1<<el<<" ";
 					}
-					MY_OFS1<<endl;
-						
-				}
+					MY_OFS1<<endl;	
+				}	
 			}	
 		}
 	}

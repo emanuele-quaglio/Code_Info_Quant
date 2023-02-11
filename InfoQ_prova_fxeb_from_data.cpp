@@ -223,22 +223,52 @@ void analisi_distr_freqs_theo(){
 	}	
 }
 
-//funzione che stampa a schermo le fidelity, una volta forniti i due file, uno con freqs teoriche, uno con freqs empiriche
+//funzione che stampa a schermo le fidelity, una volta forniti i due file, il 1 con freqs teoriche, il 2 con freqs empiriche. Le frequenze sono disposte sulla stessa riga. Nel caso di più righe nei due file (per fidelity di più istanze) (!STESSO NUMERO DI RIGHE!) vengono utilizzate le righe corrispondenti e prodotti i risultati tutti assieme in colonna
 void Fxeb_on_freqs_data(){
-	ifstream IF1("fs_t_q4x2_l30.txt");
-	ifstream IF2("fs_t_q4x2_l30.txt");
-	vector<double> my_fs_t;
-	vector<double> my_fs_e;
+	string file1="fs_t_q3x3_g_l60.txt";
+	string file2="fs_e_q3x3_g_l60.txt";
+	ifstream IF1c(file1);
+	ifstream IF2c(file2);
+	int count1=0;
+	int count2=0;
+	string line;
+	while(getline(IF1c, line)){
+		count1++;
+	}
+	while(getline(IF2c, line)){
+		count2++;
+	}
+	//cout<<count1<<endl;
+	ifstream IF1(file1);
+	ifstream IF2(file2);
+	if(count1!=count2) cout<<"numero righe dei due file incompatibile!"<<endl;
+	vector<double> my_fs_t_file;
+	vector<double> my_fs_e_file;
 	double val;
 	while(IF1>> val){
-		my_fs_t.push_back(val);
+		my_fs_t_file.push_back(val);
 	}
 	while(IF2>> val){
-		my_fs_e.push_back(val);
+		my_fs_e_file.push_back(val);
 	}
-	cout<<"#"<<"f_lin "<<"f_log"<<endl;
-	cout<<Fxeb_lin(my_fs_t, my_fs_e)<<" "<<Fxeb_log(my_fs_t, my_fs_e);
-	cout<<endl;
+	if(count1==1){
+		cout<<Fxeb_lin(my_fs_t_file, my_fs_e_file)<<" "<<Fxeb_log(my_fs_t_file, my_fs_e_file);
+		cout<<endl;	
+	}else{
+		cout<<"#"<<"f_lin "<<"f_log"<<endl;
+		int N=my_fs_t_file.size()/count1;
+		for(int l=0; l<count1; l++){
+			vector<double> my_fs_t;
+			vector<double> my_fs_e;
+			for(int i=0; i<N; i++){
+				my_fs_t.push_back(my_fs_t_file[l*N+i]);
+				my_fs_e.push_back(my_fs_e_file[l*N+i]);
+			}
+			cout<<Fxeb_lin(my_fs_t, my_fs_e)<<" "<<Fxeb_log(my_fs_t, my_fs_e);
+			cout<<endl;	
+			//if(l==count1-1 || l==count1-2) cout<<"verifica: "<<N<<" "<<my_fs_t_file.size()<<" "<<my_fs_t.size()<<" "<<l<<" "<<my_fs_t[0]<<endl;
+		}	
+	}
 }
 
 //funzione per testare la Fxeb su distribuzioni Porter-Thomas generate ad hoc invece che dal circuito.

@@ -21,7 +21,7 @@ void analisi_fxeb_density_matrix(){
 	vector<string> my_oneqs={"SX", "SY", "SW"};
 	vector<string> my_twoqs={"GOO"};
 	//prima riga file output (labels) ignorata da gnuplot
-	MY_OFS1<<"#"<<"qubits "<<"meas "<<"layers "<<"istanze "<<"average_Fxeb "<<"sigma_Fxeb "<<endl;
+	MY_OFS1<<"#"<<"qubits 332 "<<"meas "<<"layers "<<"istanze "<<"average_Fxeb "<<"sigma_Fxeb "<<endl;
 	//ciclo sui parametri da esplorare
 	for(int n_qubits=4; n_qubits<=12; n_qubits+=2){
 		//variabili che sono, in generale, funzioni del numero di qubits
@@ -61,45 +61,50 @@ void analisi_fxeb_density_matrix(){
 //come la precedente ma con stati solo puri
 void analisi_fxeb_ket(){
 	//variabili "globali"
-	ofstream MY_OFS1("fxeb_fs_q8_provalmany2.txt");
+	ofstream MY_OFS1("fxeb_fs_q332_l20_mmany.txt");
 	
 	vector<int> different_n_qubits={8};
-	vector<int> different_n_meas={1000};
-	vector<int> different_n_layers={60};
-	int n_istanze=2;
+	vector<int> different_n_meas={100,200,300, 400,500,750,1000,1500,3000};
+	vector<int> different_n_layers={20};
+	int n_istanze=1;
 	
 	frequent_gates g;
 	vector<string> my_oneqs={"SX", "SY", "SW"};
 	vector<string> my_twoqs={"GOO"};
 	
 	//prima riga file output (labels) ignorata da gnuplot
-	MY_OFS1<<"# "<<"n_qubits (chain) "<<"n_meas "<<"n_layers "<<"n_oneqgate_sample "<<"Fxeb_lin "<<"Fxeb_log "<<"exact freqs "<<"measured freqs "<<endl;
+	MY_OFS1<<"# "<<"n_qubits 332 "<<"n_meas "<<"n_layers "<<"oneqgate_sample "<<"Fxeb_lin "<<"Fxeb_log "<<"exact freqs "<<"measured freqs "<<endl;
 	//ciclo sui parametri da esplorare
 	//for(int n_qubits=4; n_qubits<=8; n_qubits+=2){
 	for(int n_qubits : different_n_qubits){ 
 		//variabili che sono, in generale, funzioni del numero di qubits
-		vector<vector<vector<int>>> my_masks={frequent_masks(n_qubits, "even_alternate_A"), frequent_masks(n_qubits, "even_alternate_B")};
+		vector<vector<int>> mask8_A=frequent_masks(n_qubits, "even_alternate_A");
+		vector<vector<int>> mask8_B=frequent_masks(n_qubits, "even_alternate_B");
+		vector<vector<int>> mask8_G=import_int_matrix("mask8_G.txt");
+		vector<vector<int>> mask8_H=import_int_matrix("mask8_H.txt");
+		vector<vector<vector<int>>> my_masks={mask8_A,mask8_B,mask8_G,mask8_H,mask8_G,mask8_H,mask8_A,mask8_B};
+		//vector<vector<vector<int>>> my_masks={frequent_masks(n_qubits, "even_alternate_A"), frequent_masks(n_qubits, "even_alternate_B")};
 		//vector<vector<vector<int>>> my_masks={mask12_A, mask12_B, mask12_C, mask12_D, mask12_C, mask12_D,mask12_A, mask12_B};
 		ket K(n_qubits, "allbitszero");
 		ket temp_K;
-		//for(int n_meas=30; n_meas<=10000; n_meas*=3){	
-		for(int n_meas : different_n_meas){
-			//temp_K=K;
-			ket K_zero;
-			//for(int n_layers=1; n_layers<=15; n_layers+=1){
-			for(int n_layers : different_n_layers){
-				for(int n_istanza=1; n_istanza<=n_istanze; n_istanza++){ 
-					temp_K=K;
-					string imported_sample="oneqgate_samples/oneqgate_sample_"+to_string(n_istanza)+".txt";
-					circuit my_C(n_qubits, n_layers, my_oneqs, my_twoqs, g, my_masks, imported_sample, "sequence", "sequence");
-					if(n_istanza==2) {my_C.apply_circuit_parallel(K_zero); temp_K=K_zero;
-					}else{my_C.apply_circuit_parallel(temp_K);
-					}
-					if(n_istanza==1) K_zero=temp_K;
-					vector<int> my_histo=history_sample(temp_K, n_meas);
-					vector<double> my_fs_e=ry_to_gram(my_histo, temp_K.get_N()); 
+		
+		//for(int n_layers=1; n_layers<=15; n_layers+=1){
+		for(int n_layers : different_n_layers){
+			for(int n_istanza=1; n_istanza<=n_istanze; n_istanza++){ 
+				temp_K=K;
+				string imported_sample="oneqgate_samples/oneqgate_sample_"+to_string(n_istanza)+".txt";
+				circuit my_C(n_qubits, n_layers, my_oneqs, my_twoqs, g, my_masks, imported_sample, "sequence", "sequence");
+				my_C.apply_circuit_parallel(temp_K);
+				vector<int> my_histo_tot;
+				int n_meas_prec=0;
+				//for(int n_meas=30; n_meas<=10000; n_meas*=3){	
+				for(int n_meas : different_n_meas){
+					vector<int> my_histo=history_sample(temp_K, n_meas-n_meas_prec);
+					n_meas_prec=n_meas;
+					my_histo_tot.insert(my_histo_tot.end(), my_histo.begin(), my_histo.end());
+					vector<double> my_fs_e=ry_to_gram(my_histo_tot, temp_K.get_N()); 
 					vector<double> my_fs_t=freqs_theo(temp_K); 
-					MY_OFS1<<n_qubits<<" "<<n_meas<<" "<<n_layers<<" "<<n_istanza<<" "<<Fxeb_lin(my_fs_t, my_histo)<<" "<<Fxeb_log(my_fs_t, my_fs_e)<<"			";
+					MY_OFS1<<n_qubits<<" "<<n_meas<<" "<<n_layers<<" "<<n_istanza<<" "<<Fxeb_lin(my_fs_t, my_histo_tot)<<" "<<Fxeb_log(my_fs_t, my_fs_e)<<"			";
 					for(auto el : my_fs_t) {
 						MY_OFS1<<el<<" ";
 					}
@@ -107,14 +112,12 @@ void analisi_fxeb_ket(){
 					for(auto el : my_fs_e) {
 						MY_OFS1<<el<<" ";
 					}
-					MY_OFS1<<endl;
-						
+					MY_OFS1<<endl;		
 				}
 			}	
 		}
 	}
 }
-
 
 //funzione che cicla su n_qubits e n_layers stampando ogni volta il vettore di frequenze teoriche ordinato in ordine decrescente (verrà poi fittato con esponenziale da altro codice che valuterà il X^2)
 void analisi_distr_freqs_theo(){
