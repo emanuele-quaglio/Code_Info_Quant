@@ -751,7 +751,7 @@ class ket {
 			qbits_left=my_qbits_left;
 		}
 		
-		//pensata per funzionare con un ket K  (DA CONTROLLARE)
+		//pensata per funzionare con una density matrix e poi riadattata, ergo alcuni commenti sono incoerenti con le operazioni a cui si riferiscono 
 		int project(int k, int outcome=2){
 			double sum0=0;
 			int pos=posizione(k, qbits_left);
@@ -841,7 +841,7 @@ void double_qbit_gate(density_matrix &Ro, vector<vector<complex<double>>> gate, 
 	//calcolo U con l'opportuna trasformazione di Swap in modo che agisca su M pur essendo costruita come gate su qubit 0 e 1
 	//lo swap è una composizione di 2 swap, il primo manda il primo qubit in pos 0, il secondo manda il secondo qubit in pos 1
 	vector<vector<complex<double>>> mySWAP=mat_prod(SWAP(pos1, 0, Ro.get_n()), SWAP(pos2, 1, Ro.get_n()));								
-	//U= SWAP Uswapped SWAP+, con U prod_kron di gate di due qubit e identità
+	//U= SWAP Uswapped SWAP+, con U prod_kron di gate di due qubit e identità. Infatti SWAP^-1=SWAP^T=(poichè reale)=SWAP+
 	vector<vector<complex<double>>> U=mat_prod(mySWAP, mat_prod(kron_prod(gate, ID(pow(2, Ro.get_n()-2))), mySWAP, "Badjoint"));
 	//calcolo la nuova ro M'=UMU+
 	Ro.set_M(mat_prod(U, mat_prod(Ro.get_M(), U, "Badjoint")));
@@ -855,7 +855,7 @@ void double_qbit_gate(ket &K, vector<vector<complex<double>>> gate, int k1, int 
 	//calcolo U con l'opportuna trasformazione di Swap in modo che agisca su M pur essendo costruita come gate su qubit 0 e 1
 	//lo swap è una composizione di 2 swap, il primo manda il primo qubit in pos 0, il secondo manda il secondo qubit in pos 1
 	vector<vector<complex<double>>> mySWAP=mat_prod(SWAP(pos1, 0, K.get_n()), SWAP(pos2, 1, K.get_n()));								
-	//U= SWAP Uswapped SWAP+, con U prod_kron di gate di due qubit e identità
+	//U= SWAP Uswapped SWAP+, con U prod_kron di gate di due qubit e identità. Infatti SWAP^-1=SWAP^T=(poichè reale)=SWAP+
 	vector<vector<complex<double>>> U=mat_prod(mySWAP, mat_prod(kron_prod(gate, ID(pow(2, K.get_n()-2))), mySWAP, "Badjoint"));
 	//calcolo il nuovo K'=UK
 	K.set_V(apply_mat(U, K.get_V()));
@@ -1395,8 +1395,8 @@ double Fxeb_log(vector<double> fs_t, vector<double> fs_e){
 	if(fs_t.size()!=fs_e.size()) cout<<"dimensioni vettori di frequenze sono incompatibili!"<<endl;
 	double Fxeb=0;
 	for(int i=0; i<fs_t.size(); i++){
-		if(fs_e[i]>1e-15){
-			Fxeb+=fs_t[i]*log(fs_e[i]);	
+		if(fs_t[i]>1e-15){
+			Fxeb+=fs_e[i]*log(fs_t[i]);	
 		}
 	}
 	Fxeb=-Fxeb;
